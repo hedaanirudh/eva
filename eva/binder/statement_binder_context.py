@@ -121,7 +121,7 @@ class StatementBinderContext:
         if not alias:
             alias, col_obj = self._search_all_alias_maps(col_name)
         else:
-            # serach in all alias maps
+            # search in all alias maps
             col_obj = self._check_table_alias_map(alias, col_name)
             if not col_obj:
                 col_obj = self._check_derived_table_alias_map(alias, col_name)

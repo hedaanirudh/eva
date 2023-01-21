@@ -369,6 +369,44 @@ class LoadExecutorTest(unittest.TestCase):
         drop_query = "DROP TABLE IF EXISTS MyVideoCSV;"
         execute_query_fetch_all(drop_query)
 
+    def test_join_with_csv(self): 
+
+        # loading a csv requires a table to be created first
+        create_table_query = """
+
+            CREATE TABLE IF NOT EXISTS MyVideoCSV (
+                id INTEGER UNIQUE,
+                frame_id INTEGER,
+                video_id INTEGER,
+                dataset_name TEXT(30),
+                label TEXT(30),
+                bbox NDARRAY FLOAT32(4),
+                object_id INTEGER
+            );
+            """
+        execute_query_fetch_all(create_table_query)
+
+        # load the CSV
+        load_query = """LOAD CSV 'dummy.csv' INTO MyVideoCSV;"""
+        execute_query_fetch_all(load_query)
+
+        # load the video to be joined with the csv
+        query = f"LOAD VIDEO '{self.video_file_path}' INTO MyVideo;"
+        execute_query_fetch_all(query)
+
+        select_query = """SELECT A.id, A.label, B.bbox FROM MyVideoCSV A JOIN 
+                        MyVideoCSV B ON A.id = B.id;"""
+
+        actual_batch = execute_query_fetch_all(select_query)
+        actual_batch.sort()
+
+        self.assertTrue(all(actual_batch.frames.columns == ["A.id", "A.label", "B.bbox"]))
+        self.assertEqual(len(actual_batch), 20)
+
+        # clean up
+        drop_query = "DROP TABLE IF EXISTS MyVideoCSV;"
+        execute_query_fetch_all(drop_query)
+       
 
 if __name__ == "__main__":
     unittest.main()
