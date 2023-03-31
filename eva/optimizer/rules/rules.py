@@ -60,8 +60,8 @@ from eva.optimizer.operators import (
     LogicalDrop,
     LogicalDropUDF,
     LogicalExplain,
-    LogicalFaissIndexScan,
     LogicalExtractObject,
+    LogicalFaissIndexScan,
     LogicalFilter,
     LogicalFunctionScan,
     LogicalGet,
@@ -512,7 +512,7 @@ class XformExtractObjectToLinearFlow(Rule):
     """If the inner node of a lateral join is a Extract_Object function-valued expression, we eliminate the join node and make the inner node the parent of the outer node. This produces a linear data flow path.
 
      LogicalJoin(Lateral)               LogicalExtractObject
-     /           \                 ->        |
+     /           \\                 ->        |
     A        LogicalExtractObject            A
     """
 

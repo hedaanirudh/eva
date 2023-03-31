@@ -284,7 +284,6 @@ class PytorchTest(unittest.TestCase):
         self.assertTrue(res["toxicityclassifier.labels"][0] == "toxic")
         self.assertTrue(res["toxicityclassifier.labels"][1] == "not toxic")
 
-
     # @pytest.mark.torchtest
     def test_should_run_extract_object(self):
         udf = """CREATE UDF

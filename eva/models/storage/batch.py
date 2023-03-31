@@ -66,9 +66,6 @@ class Batch:
         """
         return self._frames[column_name].to_numpy()
 
-    def to_numpy(self) -> np.ndarray:
-        return self._frames.to_numpy()
-
     def serialize(self):
         obj = {"frames": self._frames, "batch_size": len(self)}
         return PickleSerializer.serialize(obj)

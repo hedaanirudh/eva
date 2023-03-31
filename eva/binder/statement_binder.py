@@ -295,11 +295,11 @@ def handle_extract_object(node: FunctionExpression, binder_context: StatementBin
         logger.error(err_msg)
         raise BinderError(err_msg)
 
-    """ 
+    """
     1. Bind the source video data
     2. Create the detector function expression using the provided name.
     3. Create the tracker function expression. Its inputs are id, data, output of detector.
-    4. Bind the extract object function expression and append the new children. 
+    4. Bind the extract object function expression and append the new children.
     """
 
     # 1. Bind the source video

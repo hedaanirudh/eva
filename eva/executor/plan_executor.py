@@ -25,8 +25,8 @@ from eva.executor.drop_executor import DropExecutor
 from eva.executor.drop_udf_executor import DropUDFExecutor
 from eva.executor.executor_utils import ExecutorError
 from eva.executor.explain_executor import ExplainExecutor
-from eva.executor.faiss_index_scan_executor import FaissIndexScanExecutor
 from eva.executor.extract_object_executor import ExtractObjectExecutor
+from eva.executor.faiss_index_scan_executor import FaissIndexScanExecutor
 from eva.executor.function_scan_executor import FunctionScanExecutor
 from eva.executor.groupby_executor import GroupByExecutor
 from eva.executor.hash_join_executor import HashJoinExecutor
@@ -145,7 +145,7 @@ class PlanExecutor:
 
         elif plan_opr_type == PlanOprType.EXTRACT_OBJECT:
             executor_node = ExtractObjectExecutor(node=plan)
-            
+
         # EXPLAIN does not need to build execution tree for its children
         if plan_opr_type != PlanOprType.EXPLAIN:
             # Build Executor Tree for children
