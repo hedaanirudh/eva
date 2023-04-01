@@ -30,6 +30,7 @@ from eva.optimizer.operators import (
     LogicalDropUDF,
     LogicalExchange,
     LogicalExplain,
+    LogicalExtractObject,
     LogicalFaissIndexScan,
     LogicalFilter,
     LogicalFunctionScan,
@@ -47,7 +48,6 @@ from eva.optimizer.operators import (
     LogicalShow,
     LogicalUnion,
     Operator,
-    LogicalExtractObject,
 )
 from eva.optimizer.statement_to_opr_convertor import StatementToPlanConvertor
 from eva.parser.create_index_statement import CreateIndexStatement
@@ -294,7 +294,9 @@ statement_to_opr_convertor.column_definition_to_udf_io"
         join_plan = LogicalJoin(MagicMock(), MagicMock(), MagicMock(), MagicMock())
         project_plan = LogicalProject(MagicMock(), MagicMock())
         apply_and_merge_plan = LogicalApplyAndMerge(MagicMock(), MagicMock())
-        extract_object_plan = LogicalExtractObject(MagicMock(), MagicMock(), MagicMock(), MagicMock())
+        extract_object_plan = LogicalExtractObject(
+            MagicMock(), MagicMock(), MagicMock(), MagicMock()
+        )
 
         create_plan.append_child(create_udf_plan)
 
