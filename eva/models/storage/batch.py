@@ -55,16 +55,8 @@ class Batch:
     def columns(self):
         return self._frames.columns
 
-    def column_as_numpy_array(self, column_name: str) -> np.ndarray:
-        """Return a column as numpy array
-
-        Args:
-            column_name (str): the name of the required column
-
-        Returns:
-            numpy.ndarray: the column data as a numpy array
-        """
-        return self._frames[column_name].to_numpy()
+    def column_as_numpy_array(self, column_name="data"):
+        return np.array(self._frames[column_name])
 
     def serialize(self):
         obj = {"frames": self._frames, "batch_size": len(self)}

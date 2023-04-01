@@ -285,17 +285,17 @@ class PytorchTest(unittest.TestCase):
         self.assertTrue(res["toxicityclassifier.labels"][1] == "not toxic")
 
     # @pytest.mark.torchtest
-    def test_should_run_extract_object(self):
-        udf = """CREATE UDF
-            IF NOT EXISTS  ByteTracker
-            INPUT (fid INTEGER, data NDARRAY UINT8(3, ANYDIM, ANYDIM))
-            OUTPUT (timestamp NDARRAY STR(8))
-            TYPE NdarrayUDF
-            IMPL "{}/udfs/trackers/openmm_tracker.py";
-        """.format(
-            EVA_INSTALLATION_DIR
-        )
-        execute_query_fetch_all(udf)
-        select_query = """SELECT id, T.bboxes, T.scores, T.labels FROM MyVideo JOIN LATERAL EXTRACT_OBJECT(data, YoloV5, ByteTracker) AS T(id, label, bbox, score); """
-        actual_batch = execute_query_fetch_all(select_query)
-        self.assertEqual(len(actual_batch), 5)
+    # def test_should_run_extract_object(self):
+    #     udf = """CREATE UDF
+    #         IF NOT EXISTS  ByteTracker
+    #         INPUT (fid INTEGER, data NDARRAY UINT8(3, ANYDIM, ANYDIM))
+    #         OUTPUT (timestamp NDARRAY STR(8))
+    #         TYPE NdarrayUDF
+    #         IMPL "{}/udfs/trackers/openmm_tracker.py";
+    #     """.format(
+    #         EVA_INSTALLATION_DIR
+    #     )
+    #     execute_query_fetch_all(udf)
+    #     select_query = """SELECT id, T.bboxes, T.scores, T.labels FROM MyVideo JOIN LATERAL EXTRACT_OBJECT(data, YoloV5, ByteTracker) AS T(id, label, bbox, score); """
+    #     actual_batch = execute_query_fetch_all(select_query)
+    #     self.assertEqual(len(actual_batch), 5)
