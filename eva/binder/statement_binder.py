@@ -291,7 +291,7 @@ class StatementBinder:
 
 def handle_extract_object(node: FunctionExpression, binder_context: StatementBinder):
     if len(node.children) != 3:
-        err_msg = f"Invalid arguments provided to {UDFType.EXTRACT_OBJECT}. Example correct usage, (data, Detector, Tracker)"
+        err_msg = f"Invalid arguments provided to {UDFType.EXTRACTOBJECT}. Example correct usage, (data, Detector, Tracker)"
         logger.error(err_msg)
         raise BinderError(err_msg)
 

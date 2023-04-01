@@ -80,8 +80,8 @@ class StatementToPlanConvertor:
 
         elif table_ref.is_table_valued_expr():
             tve = table_ref.table_valued_expr
-            if tve.name.lower() == UDFType.EXTRACT_OBJECT:
-                expr = tve.func_expr
+            expr = tve.func_expr
+            if expr.name.lower() == UDFType.EXTRACTOBJECT:
                 self._plan = LogicalExtractObject(
                     expr=expr,
                     detector=expr.children[1],
@@ -91,7 +91,7 @@ class StatementToPlanConvertor:
                 )
             else:
                 self._plan = LogicalFunctionScan(
-                    func_expr=tve.func_expr,
+                    func_expr=expr,
                     alias=table_ref.alias,
                     do_unnest=tve.do_unnest,
                 )
