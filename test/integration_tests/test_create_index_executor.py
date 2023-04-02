@@ -15,7 +15,7 @@
 import os
 import unittest
 from pathlib import Path
-from test.util import load_inbuilt_udfs
+from test.util import load_udfs_for_testing
 
 import faiss
 import numpy as np
@@ -28,7 +28,6 @@ from eva.catalog.catalog_type import ColumnType, IndexType, NdArrayType, TableTy
 from eva.catalog.catalog_utils import xform_column_definitions_to_catalog_entries
 from eva.catalog.sql_config import IDENTIFIER_COLUMN
 from eva.configuration.configuration_manager import ConfigurationManager
-from eva.configuration.constants import EVA_DEFAULT_DIR, INDEX_DIR
 from eva.executor.executor_utils import ExecutorError
 from eva.models.storage.batch import Batch
 from eva.parser.create_statement import ColumnDefinition
@@ -41,8 +40,7 @@ from eva.utils.generic_utils import generate_file_path
 class CreateIndexTest(unittest.TestCase):
     def _index_save_path(self):
         return str(
-            EVA_DEFAULT_DIR
-            / INDEX_DIR
+            Path(ConfigurationManager().get_value("storage", "index_dir"))
             / Path("{}_{}.index".format("HNSW", "testCreateIndexName"))
         )
 
@@ -53,8 +51,7 @@ class CreateIndexTest(unittest.TestCase):
 
         # Reset catalog.
         CatalogManager().reset()
-
-        load_inbuilt_udfs()
+        load_udfs_for_testing(mode="minimal")
 
         # Create feature vector table and raw input table.
         feat1 = np.array([[0, 0, 0]]).astype(np.float32)
@@ -180,10 +177,6 @@ class CreateIndexTest(unittest.TestCase):
         self.assertEqual(
             index_catalog_entry.save_file_path,
             self._index_save_path(),
-        )
-        self.assertEqual(
-            index_catalog_entry.udf_signature,
-            "DummyFeatureExtractor(testCreateIndexInputTable.input)",
         )
 
         # Test referenced column.

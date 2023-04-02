@@ -20,7 +20,7 @@ from test.util import (  # file_remove,
     create_table,
     file_remove,
     get_logical_query_plan,
-    load_inbuilt_udfs,
+    load_udfs_for_testing,
 )
 
 import numpy as np
@@ -31,7 +31,7 @@ from eva.binder.binder_utils import BinderError
 from eva.catalog.catalog_manager import CatalogManager
 from eva.configuration.constants import EVA_ROOT_DIR
 from eva.models.storage.batch import Batch
-from eva.readers.opencv_reader import OpenCVReader
+from eva.readers.decord_reader import DecordReader
 from eva.server.command_handler import execute_query_fetch_all
 
 NUM_FRAMES = 10
@@ -48,7 +48,7 @@ class SelectExecutorTest(unittest.TestCase):
         ua_detrac = f"{EVA_ROOT_DIR}/data/ua_detrac/ua_detrac.mp4"
         load_query = f"LOAD VIDEO '{ua_detrac}' INTO DETRAC;"
         execute_query_fetch_all(load_query)
-        load_inbuilt_udfs()
+        load_udfs_for_testing()
         cls.table1 = create_table("table1", 100, 3)
         cls.table2 = create_table("table2", 500, 3)
         cls.table3 = create_table("table3", 1000, 3)
@@ -84,9 +84,7 @@ class SelectExecutorTest(unittest.TestCase):
         expected_rows = [
             {
                 "myvideo.id": i,
-                "myvideo.data": np.array(
-                    np.ones((2, 2, 3)) * float(i + 1) * 25, dtype=np.uint8
-                ),
+                "myvideo.data": np.array(np.ones((32, 32, 3)) * i, dtype=np.uint8),
             }
             for i in range(NUM_FRAMES)
         ]
@@ -154,7 +152,7 @@ class SelectExecutorTest(unittest.TestCase):
         select_query = "SELECT id, data FROM MNIST;"
         actual_batch = execute_query_fetch_all(select_query)
         actual_batch.sort("mnist.id")
-        video_reader = OpenCVReader("data/mnist/mnist.mp4")
+        video_reader = DecordReader("data/mnist/mnist.mp4")
         expected_batch = Batch(frames=pd.DataFrame())
         for batch in video_reader.read():
             batch.frames["name"] = "mnist.mp4"
@@ -171,15 +169,7 @@ class SelectExecutorTest(unittest.TestCase):
 
         select_query = "SELECT data FROM MyVideo WHERE id = 5;"
         actual_batch = execute_query_fetch_all(select_query)
-        expected_rows = [
-            {
-                "myvideo.data": np.array(
-                    np.ones((2, 2, 3)) * float(5 + 1) * 25, dtype=np.uint8
-                )
-            }
-        ]
-        expected_batch = Batch(frames=pd.DataFrame(expected_rows))
-        self.assertEqual(actual_batch, expected_batch)
+        self.assertEqual(actual_batch, expected_batch.project(["myvideo.data"]))
 
         select_query = "SELECT id, data FROM MyVideo WHERE id >= 2;"
         actual_batch = execute_query_fetch_all(select_query)
@@ -627,4 +617,38 @@ class SelectExecutorTest(unittest.TestCase):
             "SELECT DummyMultiObjectDetector(data).labels FROM MyVideo"
         )
         signature = plan.target_list[0].signature()
-        self.assertEqual(signature, "DummyMultiObjectDetector(MyVideo.data)")
+        udf_id = (
+            CatalogManager()
+            .get_udf_catalog_entry_by_name("DummyMultiObjectDetector")
+            .row_id
+        )
+        table_entry = CatalogManager().get_table_catalog_entry("MyVideo")
+        col_id = CatalogManager().get_column_catalog_entry(table_entry, "data").row_id
+        self.assertEqual(
+            signature, f"DummyMultiObjectDetector[{udf_id}](MyVideo.data[{col_id}])"
+        )
+
+    def test_complex_logical_expressions(self):
+        query = """SELECT id FROM MyVideo
+            WHERE DummyObjectDetector(data).label = ['{}']  ORDER BY id;"""
+        persons = execute_query_fetch_all(query.format("person")).frames.to_numpy()
+        bicycles = execute_query_fetch_all(query.format("bicycle")).frames.to_numpy()
+        import numpy as np
+
+        self.assertTrue(len(np.intersect1d(persons, bicycles)) == 0)
+
+        query_or = """SELECT id FROM MyVideo \
+            WHERE DummyObjectDetector(data).label = ['person']
+                OR DummyObjectDetector(data).label = ['bicycle']
+            ORDER BY id;"""
+        actual = execute_query_fetch_all(query_or)
+        expected = execute_query_fetch_all("SELECT id FROM MyVideo ORDER BY id")
+        self.assertEqual(expected, actual)
+
+        query_and = """SELECT id FROM MyVideo \
+            WHERE DummyObjectDetector(data).label = ['person']
+                AND DummyObjectDetector(data).label = ['bicycle']
+            ORDER BY id;"""
+
+        expected = execute_query_fetch_all(query_and)
+        self.assertEqual(len(expected), 0)
