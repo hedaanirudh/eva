@@ -67,3 +67,7 @@ class FileFormatType(EVAEnum):
 class ShowType(EVAEnum):
     UDFS  # noqa: F821
     TABLES  # noqa: F821
+
+
+class UDFType(EVAEnum):
+    EXTRACTOBJECT  # noqa: F821

@@ -69,48 +69,34 @@ class Batch:
 
     @classmethod
     def from_eq(cls, batch1: Batch, batch2: Batch) -> Batch:
-        return Batch(
-            pd.DataFrame(batch1._frames.to_numpy() == batch2._frames.to_numpy())
-        )
+        return Batch(pd.DataFrame(batch1.to_numpy() == batch2.to_numpy()))
 
     @classmethod
     def from_greater(cls, batch1: Batch, batch2: Batch) -> Batch:
-        return Batch(
-            pd.DataFrame(batch1._frames.to_numpy() > batch2._frames.to_numpy())
-        )
+        return Batch(pd.DataFrame(batch1.to_numpy() > batch2.to_numpy()))
 
     @classmethod
     def from_lesser(cls, batch1: Batch, batch2: Batch) -> Batch:
-        return Batch(
-            pd.DataFrame(batch1._frames.to_numpy() < batch2._frames.to_numpy())
-        )
+        return Batch(pd.DataFrame(batch1.to_numpy() < batch2.to_numpy()))
 
     @classmethod
     def from_greater_eq(cls, batch1: Batch, batch2: Batch) -> Batch:
-        return Batch(
-            pd.DataFrame(batch1._frames.to_numpy() >= batch2._frames.to_numpy())
-        )
+        return Batch(pd.DataFrame(batch1.to_numpy() >= batch2.to_numpy()))
 
     @classmethod
     def from_lesser_eq(cls, batch1: Batch, batch2: Batch) -> Batch:
-        return Batch(
-            pd.DataFrame(batch1._frames.to_numpy() <= batch2._frames.to_numpy())
-        )
+        return Batch(pd.DataFrame(batch1.to_numpy() <= batch2.to_numpy()))
 
     @classmethod
     def from_not_eq(cls, batch1: Batch, batch2: Batch) -> Batch:
-        return Batch(
-            pd.DataFrame(batch1._frames.to_numpy() != batch2._frames.to_numpy())
-        )
+        return Batch(pd.DataFrame(batch1.to_numpy() != batch2.to_numpy()))
 
     @classmethod
     def compare_contains(cls, batch1: Batch, batch2: Batch) -> None:
         return cls(
             pd.DataFrame(
                 [all(x in p for x in q) for p, q in zip(left, right)]
-                for left, right in zip(
-                    batch1._frames.to_numpy(), batch2._frames.to_numpy()
-                )
+                for left, right in zip(batch1.to_numpy(), batch2.to_numpy())
             )
         )
 
@@ -119,9 +105,7 @@ class Batch:
         return cls(
             pd.DataFrame(
                 [all(x in q for x in p) for p, q in zip(left, right)]
-                for left, right in zip(
-                    batch1._frames.to_numpy(), batch2._frames.to_numpy()
-                )
+                for left, right in zip(batch1.to_numpy(), batch2.to_numpy())
             )
         )
 
@@ -378,11 +362,13 @@ class Batch:
         """
         return len(self) == 0
 
-    def unnest(self) -> None:
+    def unnest(self, cols: List[str] = None) -> None:
         """
         Unnest columns and drop columns with no data
         """
-        self._frames = self._frames.explode(list(self._frames.columns))
+        if cols is None:
+            cols = list(self.columns)
+        self._frames = self._frames.explode(cols)
         self._frames.dropna(inplace=True)
 
     def reverse(self) -> None:

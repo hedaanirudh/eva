@@ -25,6 +25,7 @@ from eva.binder.binder_utils import (
 from eva.binder.statement_binder_context import StatementBinderContext
 from eva.catalog.catalog_manager import CatalogManager
 from eva.catalog.catalog_type import IndexType, NdArrayType, TableType
+from eva.catalog.catalog_utils import get_video_table_column_definitions
 from eva.expression.abstract_expression import AbstractExpression, ExpressionType
 from eva.expression.function_expression import FunctionExpression
 from eva.expression.tuple_value_expression import TupleValueExpression
@@ -37,6 +38,7 @@ from eva.parser.rename_statement import RenameTableStatement
 from eva.parser.select_statement import SelectStatement
 from eva.parser.statement import AbstractStatement
 from eva.parser.table_ref import TableRef
+from eva.parser.types import UDFType
 from eva.utils.generic_utils import get_file_checksum, load_udf_class_from_file
 from eva.utils.logging_manager import logger
 
@@ -217,6 +219,10 @@ class StatementBinder:
 
     @bind.register(FunctionExpression)
     def _bind_func_expr(self, node: FunctionExpression):
+        # handle the special case of "extract_object"
+        if node.name.upper() == str(UDFType.EXTRACTOBJECT):
+            handle_extract_object(node, self)
+            return
         # bind all the children
         for child in node.children:
             self.bind(child)
@@ -281,3 +287,50 @@ class StatementBinder:
         assert len(node.alias.col_names) == len(
             node.output_objs
         ), f"""Expected {len(node.output_objs)} output columns for {node.alias.alias_name}, got {len(node.alias.col_names)}."""
+
+
+def handle_extract_object(node: FunctionExpression, binder_context: StatementBinder):
+    if len(node.children) != 3:
+        err_msg = f"Invalid arguments provided to {UDFType.EXTRACTOBJECT}. Example correct usage, (data, Detector, Tracker)"
+        logger.error(err_msg)
+        raise BinderError(err_msg)
+
+    """
+    1. Bind the source video data
+    2. Create the detector function expression using the provided name.
+    3. Create the tracker function expression. Its inputs are id, data, output of detector.
+    4. Bind the extract object function expression and append the new children.
+    """
+
+    # 1. Bind the source video
+    video_data = node.children[0]
+    binder_context.bind(video_data)
+
+    # 2. Construct the detector
+    # convert detector to FunctionExpression before binding
+    # eg. YoloV5 -> YoloV5(data)
+    detector = FunctionExpression(None, node.children[1].col_name)
+    detector.append_child(video_data.copy())
+    binder_context.bind(detector)
+
+    # 3. Construct the tracker
+    # convert tracker to FunctionExpression before binding
+    # eg. ByteTracker -> ByteTracker(id, data, labels, bboxes, scores)
+    tracker = FunctionExpression(None, node.children[2].col_name)
+    # create the video id expression
+    columns = get_video_table_column_definitions()
+    tracker.append_child(
+        TupleValueExpression(
+            col_name=columns[1].name, table_alias=video_data.table_alias
+        )
+    )
+    tracker.append_child(video_data.copy())
+    binder_context.bind(tracker)
+    # append the output of detector
+    for obj in detector.output_objs:
+        tracker.append_child(obj)
+
+    # 4. Bind the extract object expression.
+    node.children = []
+    binder_context.bind(node)
+    node.children = [video_data, detector, tracker]
